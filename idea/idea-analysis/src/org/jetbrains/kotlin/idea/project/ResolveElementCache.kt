@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
-import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.util.containers.ContainerUtil
 import org.jetbrains.kotlin.cfg.ControlFlowInformationProvider
 import org.jetbrains.kotlin.container.get
@@ -22,6 +21,7 @@ import org.jetbrains.kotlin.frontend.di.createContainerForBodyResolve
 import org.jetbrains.kotlin.idea.caches.resolve.CodeFragmentAnalyzer
 import org.jetbrains.kotlin.idea.caches.resolve.util.analyzeControlFlow
 import org.jetbrains.kotlin.idea.caches.trackers.KotlinCodeBlockModificationListener
+import org.jetbrains.kotlin.idea.caches.trackers.inBlockModificationCount
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.psi.*
@@ -42,6 +42,7 @@ class ResolveElementCache(
     private val targetPlatform: TargetPlatform,
     private val codeFragmentAnalyzer: CodeFragmentAnalyzer
 ) : BodyResolveCache {
+
     private class CachedFullResolve(val bindingContext: BindingContext, resolveElement: KtElement) {
         private val modificationStamp: Long? = modificationStamp(resolveElement)
 
@@ -75,16 +76,17 @@ class ResolveElementCache(
         )
 
     private class CachedPartialResolve(val bindingContext: BindingContext, file: KtFile, val mode: BodyResolveMode) {
-        private val modificationStamp: Long? = modificationStamp(file)
+        private val modificationStamp: Long = modificationStamp(file)
 
         fun isUpToDate(file: KtFile, newMode: BodyResolveMode) =
             modificationStamp == modificationStamp(file) && mode.doesNotLessThan(newMode)
 
-        private fun modificationStamp(file: KtFile): Long? {
-            return if (!file.isPhysical) // for non-physical file we don't get MODIFICATION_COUNT increased and must reset data on any modification of the file
+        private fun modificationStamp(file: KtFile): Long {
+            // for non-physical file we don't get MODIFICATION_COUNT increased and must reset data on any modification of the file
+            return if (!file.isPhysical)
                 file.modificationStamp
             else
-                null
+                file.inBlockModificationCount
         }
     }
 
@@ -93,7 +95,7 @@ class ResolveElementCache(
             CachedValueProvider<MutableMap<KtExpression, CachedPartialResolve>> {
                 CachedValueProvider.Result.create(
                     ContainerUtil.createConcurrentWeakKeySoftValueMap<KtExpression, CachedPartialResolve>(),
-                    PsiModificationTracker.MODIFICATION_COUNT,
+                    KotlinCodeBlockModificationListener.getInstance(project).kotlinOutOfCodeBlockTracker,
                     resolveSession.exceptionTracker
                 )
             },
@@ -156,6 +158,7 @@ class ResolveElementCache(
                 val statementsToResolve =
                     contextElements!!.map { PartialBodyResolveFilter.findStatementToResolve(it, resolveElement) }.distinct()
                 val partialResolveMap = partialBodyResolveCache.value
+
                 val cachedResults = statementsToResolve.map { partialResolveMap[it ?: resolveElement] }
                 if (cachedResults.all {
                         it != null && it.isUpToDate(
