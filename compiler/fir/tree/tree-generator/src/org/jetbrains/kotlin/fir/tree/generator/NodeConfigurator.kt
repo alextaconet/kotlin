@@ -180,6 +180,7 @@ object NodeConfigurator : AbstractFieldConfigurator<FirTreeBuilder>(FirTreeBuild
 
         functionCall.configure {
             +field("calleeReference", namedReference)
+            +fieldMap("argumentMap", expression, valueParameter, withReplace = true)
         }
 
         operatorCall.configure {

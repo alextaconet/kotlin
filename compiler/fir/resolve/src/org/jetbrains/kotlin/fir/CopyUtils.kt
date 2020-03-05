@@ -34,7 +34,8 @@ fun FirFunctionCall.copy(
     source: FirSourceElement? = this.source,
     safe: Boolean = this.safe,
     typeArguments: List<FirTypeProjection> = this.typeArguments,
-    resultType: FirTypeRef = this.typeRef
+    resultType: FirTypeRef = this.typeRef,
+    argumentMap: Map<FirExpression, FirValueParameter>? = this.argumentMap
 ): FirFunctionCall {
     val builder = if (this is FirIntegerOperatorCall) {
         FirIntegerOperatorCallBuilder().apply {
@@ -43,6 +44,7 @@ fun FirFunctionCall.copy(
     } else {
         FirFunctionCallBuilder().apply {
             this.calleeReference = calleeReference
+            this.argumentMap = argumentMap
         }
     }
     builder.apply {

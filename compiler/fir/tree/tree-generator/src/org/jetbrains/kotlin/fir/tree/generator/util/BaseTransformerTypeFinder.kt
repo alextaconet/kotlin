@@ -6,10 +6,7 @@
 package org.jetbrains.kotlin.fir.tree.generator.util
 
 import org.jetbrains.kotlin.fir.tree.generator.context.AbstractFirTreeBuilder
-import org.jetbrains.kotlin.fir.tree.generator.model.AbstractElement
-import org.jetbrains.kotlin.fir.tree.generator.model.Element
-import org.jetbrains.kotlin.fir.tree.generator.model.FieldList
-import org.jetbrains.kotlin.fir.tree.generator.model.FirField
+import org.jetbrains.kotlin.fir.tree.generator.model.*
 
 fun detectBaseTransformerTypes(builder: AbstractFirTreeBuilder) {
     val usedAsFieldType = mutableMapOf<AbstractElement, Boolean>().withDefault { false }
@@ -18,6 +15,7 @@ fun detectBaseTransformerTypes(builder: AbstractFirTreeBuilder) {
             val fieldElement = when (field) {
                 is FirField -> field.element
                 is FieldList -> field.baseType as Element
+                is FieldMap -> field.keyType as Element
                 else -> throw IllegalArgumentException()
             }
             usedAsFieldType[fieldElement] = true

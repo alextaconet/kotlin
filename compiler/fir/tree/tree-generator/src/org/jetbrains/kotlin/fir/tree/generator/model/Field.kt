@@ -189,3 +189,34 @@ class FieldList(
 
     override val isFirType: Boolean = baseType is Element
 }
+
+// ----------- Field map -----------
+
+class FieldMap(
+    override val name: String,
+    val keyType: Importable,
+    val valueType: Importable,
+    override val withReplace: Boolean
+) : Field() {
+    override var defaultValueInImplementation: String? = null
+    override val packageName: String? get() = valueType.packageName
+    override val fullQualifiedName: String? get() = valueType.fullQualifiedName
+    override val type: String = "Map<${keyType.typeWithArguments}, ${valueType.typeWithArguments}>"
+
+    override val nullable: Boolean
+        get() = true
+
+    override var isMutable: Boolean = true
+
+    override fun internalCopy(): Field {
+        return FieldMap(
+            name,
+            keyType,
+            valueType,
+            withReplace
+        )
+    }
+
+    override val isFirType: Boolean = keyType is Element && valueType is Element
+}
+

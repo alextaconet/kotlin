@@ -84,6 +84,7 @@ class FirCallResolver(
 
         val resultExpression = functionCall.transformCalleeReference(StoreNameReference, nameReference)
         val candidate = resultExpression.candidate()
+        resultExpression.replaceArgumentMap(candidate?.argumentMapping)
 
         // We need desugaring
         val resultFunctionCall = if (candidate != null && candidate.callInfo != result.info) {
@@ -93,6 +94,7 @@ class FirCallResolver(
                 extensionReceiver = candidate.extensionReceiverExpression(),
                 arguments = candidate.callInfo.arguments,
                 safe = candidate.callInfo.isSafeCall,
+                argumentMap = candidate.argumentMapping,
             )
         } else {
             resultExpression

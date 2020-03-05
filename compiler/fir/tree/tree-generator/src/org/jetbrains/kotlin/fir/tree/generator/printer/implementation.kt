@@ -40,6 +40,10 @@ fun SmartPrinter.printImplementation(implementation: Implementation) {
                 println("${name}.transformInplace(transformer, data)")
             }
 
+            is FieldMap -> {
+                // Do nothing
+            }
+
             else -> throw IllegalStateException()
         }
     }
@@ -165,6 +169,10 @@ fun SmartPrinter.printImplementation(implementation: Implementation) {
 
                                             is FieldList -> {
                                                 println("${field.name}.forEach { it.accept(visitor, data) }")
+                                            }
+
+                                            is FieldMap -> {
+                                                // Do nothing
                                             }
 
                                             else -> throw IllegalStateException()

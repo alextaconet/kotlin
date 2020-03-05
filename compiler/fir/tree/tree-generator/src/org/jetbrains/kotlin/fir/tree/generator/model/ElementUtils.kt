@@ -90,3 +90,9 @@ infix fun FieldSet.with(set: FieldSet): FieldSet {
 fun Field.withTransform(): Field = copy().apply { needsSeparateTransform = true }
 
 fun FieldSet.withTransform(): FieldSet = this.map { it.withTransform() }
+
+// ----------- Field map -----------
+
+fun fieldMap(name: String, keyType: Importable, valueType: Importable, withReplace: Boolean = false): Field {
+    return FieldMap(name, keyType, valueType, withReplace)
+}

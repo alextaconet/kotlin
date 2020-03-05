@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.fir.expressions.impl
 
 import org.jetbrains.kotlin.fir.FirImplementationDetail
 import org.jetbrains.kotlin.fir.FirSourceElement
+import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirComponentCall
 import org.jetbrains.kotlin.fir.expressions.FirExpression
@@ -30,6 +31,7 @@ internal class FirComponentCallImpl(
     override val annotations: MutableList<FirAnnotationCall>,
     override val typeArguments: MutableList<FirTypeProjection>,
     override val arguments: MutableList<FirExpression>,
+    override var argumentMap: Map<FirExpression, FirValueParameter>?,
     override var explicitReceiver: FirExpression,
     override val componentIndex: Int,
 ) : FirComponentCall() {
@@ -99,5 +101,9 @@ internal class FirComponentCallImpl(
     override fun replaceTypeArguments(newTypeArguments: List<FirTypeProjection>) {
         typeArguments.clear()
         typeArguments.addAll(newTypeArguments)
+    }
+
+    override fun replaceArgumentMap(newArgumentMap: Map<FirExpression, FirValueParameter>?) {
+        argumentMap = newArgumentMap
     }
 }

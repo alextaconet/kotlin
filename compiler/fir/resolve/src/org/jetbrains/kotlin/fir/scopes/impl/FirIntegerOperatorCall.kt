@@ -45,6 +45,7 @@ class FirIntegerOperatorCall @FirImplementationDetail constructor(
     extensionReceiver,
     arguments,
     calleeReference,
+    emptyMap()
 )
 
 @FirBuilderDsl

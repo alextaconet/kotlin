@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.fir.FirImplementationDetail
 import org.jetbrains.kotlin.fir.FirSourceElement
 import org.jetbrains.kotlin.fir.builder.FirAnnotationContainerBuilder
 import org.jetbrains.kotlin.fir.builder.FirBuilderDsl
+import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.FirFunctionCall
@@ -42,6 +43,7 @@ open class FirFunctionCallBuilder : FirQualifiedAccessBuilder, FirCallBuilder, F
     override var extensionReceiver: FirExpression = FirNoReceiverExpression
     override val arguments: MutableList<FirExpression> = mutableListOf()
     open lateinit var calleeReference: FirNamedReference
+    open var argumentMap: Map<FirExpression, FirValueParameter>? = null
 
     @UseExperimental(FirImplementationDetail::class)
     override fun build(): FirFunctionCall {
@@ -56,6 +58,7 @@ open class FirFunctionCallBuilder : FirQualifiedAccessBuilder, FirCallBuilder, F
             extensionReceiver,
             arguments,
             calleeReference,
+            argumentMap,
         )
     }
 
