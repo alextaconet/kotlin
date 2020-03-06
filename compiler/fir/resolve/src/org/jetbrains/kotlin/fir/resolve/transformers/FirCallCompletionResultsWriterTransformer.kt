@@ -31,7 +31,7 @@ import org.jetbrains.kotlin.fir.visitors.*
 import org.jetbrains.kotlin.types.AbstractTypeApproximator
 import org.jetbrains.kotlin.types.TypeApproximatorConfiguration
 import org.jetbrains.kotlin.types.Variance
-import java.lang.Math.min
+import kotlin.math.min
 
 class FirCallCompletionResultsWriterTransformer(
     override val session: FirSession,
@@ -179,33 +179,37 @@ class FirCallCompletionResultsWriterTransformer(
             }
             else -> {
                 resultType = typeRef.substituteTypeRef(subCandidate)
-                val vararg = subCandidate.argumentMapping?.values?.firstOrNull { it.isVararg }
+                val argumentMapping = subCandidate.argumentMapping
+                val varargParameter = argumentMapping?.values?.firstOrNull { it.isVararg }
                 result.transformArguments(this, subCandidate.createArgumentsMapping()).apply call@{
-                    if (vararg != null && this is FirFunctionCallImpl) {
+                    if (varargParameter != null && this is FirFunctionCallImpl) {
                         // Create a FirVarargArgumentExpression for the vararg arguments
-                        val resolvedArrayType = vararg.returnTypeRef.substitute(subCandidate)
+                        val varargParameterTypeRef = varargParameter.returnTypeRef
+                        val resolvedArrayType = varargParameterTypeRef.substitute(subCandidate)
                         val resolvedElementType = resolvedArrayType.arrayElementType(session)
                         var firstIndex = this@call.arguments.size
+                        val newArgumentMapping = mutableMapOf<FirExpression, FirValueParameter>()
                         val varargArgument = buildVarargArgumentsExpression {
-                            varargElementType = vararg.returnTypeRef.withReplacedConeType(resolvedElementType)
-                            this.typeRef = vararg.returnTypeRef.withReplacedConeType(
-                                vararg.returnTypeRef.substitute(
-                                    subCandidate
-                                )
-                            )
+                            varargElementType = varargParameterTypeRef.withReplacedConeType(resolvedElementType)
+                            this.typeRef = varargParameterTypeRef.withReplacedConeType(resolvedArrayType)
                             for ((i, arg) in this@call.arguments.withIndex()) {
-                                if (subCandidate.argumentMapping!![arg]?.isVararg ?: false) {
+                                val valueParameter = argumentMapping[arg] ?: continue
+                                if (valueParameter === varargParameter) {
                                     firstIndex = min(firstIndex, i)
                                     arguments += arg
+                                } else {
+                                    newArgumentMapping[arg] = valueParameter
                                 }
                             }
                         }
-                        for (arg in varargArgument.arguments) {
-                            arguments.remove(arg)
-                        }
+                        arguments.removeAll(varargArgument.arguments)
                         arguments.add(firstIndex, varargArgument)
+                        newArgumentMapping[varargArgument] = varargParameter
+                        subCandidate.argumentMapping = newArgumentMapping
                     }
-                }.transformExplicitReceiver(integerApproximator, null)
+                }.transformExplicitReceiver(integerApproximator, null).apply {
+                    replaceArgumentMap(subCandidate.argumentMapping)
+                }
             }
         }
 
