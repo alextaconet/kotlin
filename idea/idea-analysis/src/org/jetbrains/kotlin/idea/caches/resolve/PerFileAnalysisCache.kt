@@ -28,7 +28,9 @@ import org.jetbrains.kotlin.frontend.di.createContainerForLazyBodyResolve
 import org.jetbrains.kotlin.idea.caches.project.getModuleInfo
 import org.jetbrains.kotlin.idea.caches.trackers.clearInBlockModifications
 import org.jetbrains.kotlin.idea.caches.trackers.inBlockModifications
-import org.jetbrains.kotlin.idea.project.*
+import org.jetbrains.kotlin.idea.project.IdeaModuleStructureOracle
+import org.jetbrains.kotlin.idea.project.findAnalyzerServices
+import org.jetbrains.kotlin.idea.project.languageVersionSettings
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.parentsWithSelf
 import org.jetbrains.kotlin.resolve.*
@@ -50,6 +52,16 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
 
     private val cache = HashMap<PsiElement, AnalysisResult>()
     private var fileResult: AnalysisResult? = null
+
+    fun fetchAnalysisResults(element: KtElement): AnalysisResult? {
+        assert(element.containingKtFile == file) { "Wrong file. Expected $file, but was ${element.containingKtFile}" }
+
+        return synchronized(this) {
+            updateFileResultFromCache()
+
+            return if (file.inBlockModifications.isEmpty()) fileResult else null
+        }
+    }
 
     fun getAnalysisResults(element: KtElement): AnalysisResult {
         assert(element.containingKtFile == file) { "Wrong file. Expected $file, but was ${element.containingKtFile}" }
@@ -79,15 +91,7 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
     }
 
     private fun getIncrementalAnalysisResult(): AnalysisResult? {
-        // move fileResult from cache if it is stored there
-        if (fileResult == null && cache.containsKey(file)) {
-            fileResult = cache[file]
-
-            // drop existed results for entire cache:
-            // if incremental analysis is applicable it will produce a single value for file
-            // otherwise those results are potentially stale
-            cache.clear()
-        }
+        updateFileResultFromCache()
 
         val inBlockModifications = file.inBlockModifications
         if (inBlockModifications.isNotEmpty()) {
@@ -137,6 +141,18 @@ internal class PerFileAnalysisCache(val file: KtFile, componentProvider: Compone
             }
         }
         return fileResult
+    }
+
+    private fun updateFileResultFromCache() {
+        // move fileResult from cache if it is stored there
+        if (fileResult == null && cache.containsKey(file)) {
+            fileResult = cache[file]
+
+            // drop existed results for entire cache:
+            // if incremental analysis is applicable it will produce a single value for file
+            // otherwise those results are potentially stale
+            cache.clear()
+        }
     }
 
     private fun lookUp(analyzableElement: KtElement): AnalysisResult? {
