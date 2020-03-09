@@ -163,7 +163,7 @@ public abstract class CodegenTestCase extends KotlinBaseTest<KotlinBaseTest.Test
         List<String> kotlinConfigurationFlags = new ArrayList<>(0);
         for (TestFile testFile : testFilesWithConfigurationDirectives) {
             String content = testFile.content;
-            Map<String, String> directives = usePreparsedDirectives ? testFile.directives : parseDirectivesAndFlags(content);
+            Map<String, String> directives = true || usePreparsedDirectives ? testFile.directives : parseDirectivesAndFlags(content);
 
             String configurationFlags = directives.get("KOTLIN_CONFIGURATION_FLAGS");
             if (configurationFlags != null) {
@@ -778,7 +778,7 @@ public abstract class CodegenTestCase extends KotlinBaseTest<KotlinBaseTest.Test
     @Override
     @NotNull
     protected List<TestFile> createTestFilesFromFile(File file, @NotNull String expectedText) {
-        List testFiles = TestFiles.createTestFiles(file.getName(), expectedText, new TestFiles.TestFileFactoryNoModules<TestFile>() {
+        List<TestFile> testFiles = TestFiles.createTestFiles(file.getName(), expectedText, new TestFiles.TestFileFactoryNoModules<TestFile>() {
             @NotNull
             @Override
             public TestFile create(@NotNull String fileName, @NotNull String text, @NotNull Map<String, String> directives) {
@@ -788,6 +788,7 @@ public abstract class CodegenTestCase extends KotlinBaseTest<KotlinBaseTest.Test
         if (InTextDirectivesUtils.isDirectiveDefined(expectedText, "WITH_HELPERS")) {
             testFiles.add(new TestFile("CodegenTestHelpers.kt", TestHelperGeneratorKt.createTextForCodegenTestHelpers(getBackend())));
         }
+
         return testFiles;
     }
 
