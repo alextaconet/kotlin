@@ -200,7 +200,7 @@ class NewConstraintSystemImpl(
             notProperTypesCache.clear()
         }
         for ((variable, constraints) in otherSystem.notFixedTypeVariables) {
-            notFixedTypeVariables[variable] = MutableVariableWithConstraints(constraints.typeVariable, constraints.constraints)
+            notFixedTypeVariables[variable] = MutableVariableWithConstraints(constraints)
         }
         storage.initialConstraints.addAll(otherSystem.initialConstraints)
         storage.maxTypeDepthFromInitialConstraints =
